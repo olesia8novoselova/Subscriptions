@@ -1,0 +1,73 @@
+basePath: /
+definitions:
+  models.CreateSubscriptionRequest:
+    properties:
+      end_date:
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        type: string
+      user_id:
+        type: string
+    type: object
+  models.SubscriptionResponse:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      price:
+        type: integer
+      service_name:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Subscriptions API
+  description: REST-сервис для управления онлайн-подписками пользователей.
+  title: Subscriptions API (Swagger)
+  version: "1.0"
+paths:
+  /api/subscriptions:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт запись о подписке
+      parameters:
+      - description: Subscription body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create subscription
+      tags:
+      - subscriptions
+schemes:
+- http
+swagger: "2.0"

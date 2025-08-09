@@ -1,0 +1,112 @@
+{
+    "schemes": [
+        "http"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "REST-сервис для управления онлайн-подписками пользователей.",
+        "title": "Subscriptions API (Swagger)",
+        "contact": {
+            "name": "Effective Mobile — Junior Golang Test"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/api/subscriptions": {
+            "post": {
+                "description": "Создаёт запись о подписке",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Create subscription",
+                "parameters": [
+                    {
+                        "description": "Subscription body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateSubscriptionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.CreateSubscriptionRequest": {
+            "type": "object",
+            "properties": {
+                "end_date": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "service_name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.SubscriptionResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "service_name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}
