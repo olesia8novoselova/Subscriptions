@@ -10,7 +10,7 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Effective Mobile — Junior Golang Test"
+            "name": "Subscriptions API"
         },
         "version": "{{.Version}}"
     },
@@ -59,6 +59,53 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/api/subscriptions/{id}": {
+            "get": {
+                "description": "Возвращает запись по её ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Get subscription by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Subscription ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.SubscriptionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -85,9 +132,6 @@ const docTemplate = `{
         "models.SubscriptionResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
                 "end_date": {
                     "type": "string"
                 },
@@ -101,9 +145,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "start_date": {
-                    "type": "string"
-                },
-                "updated_at": {
                     "type": "string"
                 },
                 "user_id": {

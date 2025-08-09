@@ -66,6 +66,7 @@ func main() {
 	})
 
 	mux.HandleFunc("POST /api/subscriptions", h.CreateSubscription)
+	mux.HandleFunc("GET /api/subscriptions/", h.GetSubscription)
 
 	mux.Handle("GET /swagger/", httpSwagger.WrapHandler)
 

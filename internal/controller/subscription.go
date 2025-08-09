@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/olesia8novoselova/Subscriptions/internal/models"
 	"github.com/olesia8novoselova/Subscriptions/internal/service"
+	"gorm.io/gorm"
 )
 
 type SubscriptionHandler struct {
@@ -52,6 +54,46 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(resp)
 }
+
+
+// GetSubscription
+// @Summary Get subscription by id
+// @Description  Возвращает запись по её ID
+// @Tags subscriptions
+// @Produce json
+// @Param id path string true "Subscription ID (UUID)"
+// @Success 200 {object} models.SubscriptionResponse
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/subscriptions/{id} [get]
+func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	// Получаем id из пути
+	id := strings.TrimPrefix(r.URL.Path, "/api/subscriptions/")
+	if id == "" || strings.Contains(id, "/") {
+		h.writeError(w, http.StatusBadRequest, "invalid id path")
+		return
+	}
+
+	sub, err := h.svc.GetByID(r.Context(), id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			h.writeError(w, http.StatusNotFound, "subscription not found")
+			return
+		}
+		h.log.Error("get subscription failed", "error", err)
+		h.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := toResponse(sub)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
 
 func (h *SubscriptionHandler) writeError(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")

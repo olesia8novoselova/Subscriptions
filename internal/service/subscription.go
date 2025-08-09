@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/olesia8novoselova/Subscriptions/internal/models"
+	"gorm.io/gorm"
 )
 
 var (
@@ -17,6 +18,7 @@ var (
 
 type SubscriptionRepository interface {
 	Create(ctx context.Context, s *models.Subscription) error
+	FindByID(ctx context.Context, id uuid.UUID) (*models.Subscription, error)
 }
 
 type SubscriptionService struct {
@@ -85,4 +87,19 @@ func parseMonthYear(s string) (time.Time, error) {
 		return time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, time.UTC), nil
 	}
 	return time.Time{}, fmt.Errorf("invalid format")
+}
+
+func (s *SubscriptionService) GetByID(ctx context.Context, idStr string) (*models.Subscription, error) {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: id must be UUID", errValid)
+	}
+	sub, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("db error: %w", err)
+	}
+	return sub, nil
 }
