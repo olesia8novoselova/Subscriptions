@@ -19,6 +19,7 @@ var (
 type SubscriptionRepository interface {
 	Create(ctx context.Context, s *models.Subscription) error
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Subscription, error)
+	List(ctx context.Context, f models.ListFilters) ([]models.Subscription, error)
 }
 
 type SubscriptionService struct {
@@ -102,4 +103,33 @@ func (s *SubscriptionService) GetByID(ctx context.Context, idStr string) (*model
 		return nil, fmt.Errorf("db error: %w", err)
 	}
 	return sub, nil
+}
+
+func (s *SubscriptionService) List(ctx context.Context, userIDStr, serviceName string, limit, offset int) ([]models.Subscription, error) {
+	if limit <= 0 {
+		limit = 20
+	}
+	if limit > 100 {
+		limit = 100
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	var userIDPtr *uuid.UUID
+	if userIDStr != "" {
+		uid, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return nil, fmt.Errorf("%w: user_id must be UUID", errValid)
+		}
+		userIDPtr = &uid
+	}
+
+	f := models.ListFilters{
+		UserID: userIDPtr,
+		ServiceName: serviceName,
+		Limit: limit,
+		Offset: offset,
+	}
+	return s.repo.List(ctx, f)
 }

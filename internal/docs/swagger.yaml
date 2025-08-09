@@ -37,6 +37,43 @@ info:
   version: "1.0"
 paths:
   /api/subscriptions:
+    get:
+      description: Список подписок с фильтрами и пагинацией
+      parameters:
+      - description: Filter by user UUID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by service name (substring)
+        in: query
+        name: service_name
+        type: string
+      - description: Page size (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.SubscriptionResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List subscriptions
+      tags:
+      - subscriptions
     post:
       consumes:
       - application/json

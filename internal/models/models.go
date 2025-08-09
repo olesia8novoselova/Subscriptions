@@ -37,3 +37,12 @@ type SubscriptionResponse struct {
 	StartDate  string `json:"start_date"`
 	EndDate  *string `json:"end_date,omitempty"`
 }
+
+// ListFilters — фильтры для списка подписок
+// Используется для пагинации и фильтрации по полям
+type ListFilters struct {
+	UserID *uuid.UUID
+	ServiceName string
+	Limit int
+	Offset int
+}

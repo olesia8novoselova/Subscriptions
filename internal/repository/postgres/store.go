@@ -31,3 +31,20 @@ func (r *SubscriptionRepo) FindByID(ctx context.Context, id uuid.UUID) (*models.
 	}
 	return &sub, err
 }
+
+func (r *SubscriptionRepo) List(ctx context.Context, f models.ListFilters) ([]models.Subscription, error) {
+	q := r.db.WithContext(ctx).Model(&models.Subscription{})
+
+	if f.UserID != nil {
+		q = q.Where("user_id = ?", *f.UserID)
+	}
+	if f.ServiceName != "" {
+		q = q.Where("service_name ILIKE ?", "%"+f.ServiceName+"%")
+	}
+
+	var res []models.Subscription
+	err := q.Order("start_date DESC, created_at DESC").
+		Limit(f.Limit).Offset(f.Offset).
+		Find(&res).Error
+	return res, err
+}

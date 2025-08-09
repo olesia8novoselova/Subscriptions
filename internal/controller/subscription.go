@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/olesia8novoselova/Subscriptions/internal/models"
@@ -90,6 +91,62 @@ func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Req
 	}
 
 	resp := toResponse(sub)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
+
+
+// ListSubscriptions
+// @Summary List subscriptions
+// @Description Список подписок с фильтрами и пагинацией
+// @Tags subscriptions
+// @Produce json
+// @Param user_id query string false "Filter by user UUID"
+// @Param service_name query string false "Filter by service name (substring)"
+// @Param limit query int false "Page size (default 20, max 100)"
+// @Param offset query int false "Offset (default 0)"
+// @Success 200 {array} models.SubscriptionResponse
+// @Failure 400 {object} map[string]string
+// @Router /api/subscriptions [get]
+func (h *SubscriptionHandler) ListSubscriptions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	q := r.URL.Query()
+	userID := q.Get("user_id")
+	serviceName := q.Get("service_name")
+
+	limit := 0
+	offset := 0
+	if v := q.Get("limit"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			limit = n
+		} else {
+			h.writeError(w, http.StatusBadRequest, "limit must be integer")
+			return
+		}
+	}
+	if v := q.Get("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			offset = n
+		} else {
+			h.writeError(w, http.StatusBadRequest, "offset must be integer")
+			return
+		}
+	}
+
+	list, err := h.svc.List(r.Context(), userID, serviceName, limit, offset)
+	if err != nil {
+		h.log.Error("list subscriptions failed", "error", err)
+		h.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := make([]models.SubscriptionResponse, 0, len(list))
+	for _, s := range list {
+		resp = append(resp, toResponse(&s))
+	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
