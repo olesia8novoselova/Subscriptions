@@ -21,21 +21,21 @@ type Subscription struct {
 
 // CreateSubscriptionRequest — тело запроса на создание подписки
 type CreateSubscriptionRequest struct {
-	ServiceName string `json:"service_name"`
-	Price int `json:"price"`
-	UserID string `json:"user_id"`
-	StartDate string `json:"start_date"`
-	EndDate *string `json:"end_date,omitempty"`
+	ServiceName string `json:"service_name" example:"Test Service"`
+	Price int `json:"price" example:"500"`
+	UserID string `json:"user_id" example:"60601fee-2bf1-4721-ae6f-7636e79a0cba"`
+	StartDate string `json:"start_date" example:"07-2025"`
+	EndDate *string `json:"end_date,omitempty" example:"09-2025"`
 }
 
 // SubscriptionResponse — ответ на запрос подписки
 type SubscriptionResponse struct {
-	ID uuid.UUID `json:"id"`
-	ServiceName string `json:"service_name"`
-	Price int `json:"price"`
-	UserID  uuid.UUID `json:"user_id"`
-	StartDate  string `json:"start_date"`
-	EndDate  *string `json:"end_date,omitempty"`
+	ID uuid.UUID `json:"id" example:"b548150d-6198-4cc1-a186-8c4a1e0ccdcf"`
+	ServiceName string `json:"service_name" example:"Test Service"`
+	Price int `json:"price" example:"500"`
+	UserID  uuid.UUID `json:"user_id" example:"60601fee-2bf1-4721-ae6f-7636e79a0cba"`
+	StartDate  string `json:"start_date" example:"07-2025"`
+	EndDate  *string `json:"end_date,omitempty" example:"09-2025"`
 }
 
 // ListFilters — фильтры для списка подписок

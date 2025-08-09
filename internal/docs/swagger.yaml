@@ -3,29 +3,40 @@ definitions:
   models.CreateSubscriptionRequest:
     properties:
       end_date:
+        example: 09-2025
         type: string
       price:
+        example: 500
         type: integer
       service_name:
+        example: Test Service
         type: string
       start_date:
+        example: 07-2025
         type: string
       user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
         type: string
     type: object
   models.SubscriptionResponse:
     properties:
       end_date:
+        example: 09-2025
         type: string
       id:
+        example: b548150d-6198-4cc1-a186-8c4a1e0ccdcf
         type: string
       price:
+        example: 500
         type: integer
       service_name:
+        example: Test Service
         type: string
       start_date:
+        example: 07-2025
         type: string
       user_id:
+        example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
         type: string
     type: object
 host: localhost:8080
@@ -41,18 +52,25 @@ paths:
       description: Список подписок с фильтрами и пагинацией
       parameters:
       - description: Filter by user UUID
+        example: '"b548150d-6198-4cc1-a186-8c4a1e0ccdcf"'
         in: query
         name: user_id
         type: string
-      - description: Filter by service name (substring)
+      - default: '"Test Service"'
+        description: Filter by service name
+        example: '"Test Service"'
         in: query
         name: service_name
         type: string
-      - description: Page size (default 20, max 100)
+      - default: 20
+        description: Page size (default 20, max 100)
+        example: 20
         in: query
         name: limit
         type: integer
-      - description: Offset (default 0)
+      - default: 0
+        description: Offset (default 0)
+        example: 0
         in: query
         name: offset
         type: integer
@@ -102,10 +120,38 @@ paths:
       tags:
       - subscriptions
   /api/subscriptions/{id}:
+    delete:
+      description: Удаляет подписку по её ID
+      parameters:
+      - description: Subscription ID (UUID)
+        example: '"b548150d-6198-4cc1-a186-8c4a1e0ccdcf"'
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete subscription by id
+      tags:
+      - subscriptions
     get:
       description: Возвращает запись по её ID
       parameters:
       - description: Subscription ID (UUID)
+        example: '"b548150d-6198-4cc1-a186-8c4a1e0ccdcf"'
         in: path
         name: id
         required: true

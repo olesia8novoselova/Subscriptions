@@ -48,3 +48,14 @@ func (r *SubscriptionRepo) List(ctx context.Context, f models.ListFilters) ([]mo
 		Find(&res).Error
 	return res, err
 }
+
+func (r *SubscriptionRepo) Delete(ctx context.Context, id uuid.UUID) error {
+	res := r.db.WithContext(ctx).Delete(&models.Subscription{}, "id = ?", id)
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return gorm.ErrRecordNotFound
+	}
+	return nil
+}

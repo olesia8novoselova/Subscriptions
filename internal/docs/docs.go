@@ -30,24 +30,31 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "\"b548150d-6198-4cc1-a186-8c4a1e0ccdcf\"",
                         "description": "Filter by user UUID",
                         "name": "user_id",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Filter by service name (substring)",
+                        "default": "\"Test Service\"",
+                        "example": "\"Test Service\"",
+                        "description": "Filter by service name",
                         "name": "service_name",
                         "in": "query"
                     },
                     {
                         "type": "integer",
+                        "default": 20,
+                        "example": 20,
                         "description": "Page size (default 20, max 100)",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "integer",
+                        "default": 0,
+                        "example": 0,
                         "description": "Offset (default 0)",
                         "name": "offset",
                         "in": "query"
@@ -129,6 +136,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "example": "\"b548150d-6198-4cc1-a186-8c4a1e0ccdcf\"",
                         "description": "Subscription ID (UUID)",
                         "name": "id",
                         "in": "path",
@@ -161,6 +169,46 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Удаляет подписку по её ID",
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Delete subscription by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"b548150d-6198-4cc1-a186-8c4a1e0ccdcf\"",
+                        "description": "Subscription ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     },
@@ -169,19 +217,24 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "end_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "09-2025"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 500
                 },
                 "service_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Test Service"
                 },
                 "start_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "07-2025"
                 },
                 "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
                 }
             }
         },
@@ -189,22 +242,28 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "end_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "09-2025"
                 },
                 "id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "b548150d-6198-4cc1-a186-8c4a1e0ccdcf"
                 },
                 "price": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 500
                 },
                 "service_name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Test Service"
                 },
                 "start_date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "07-2025"
                 },
                 "user_id": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
                 }
             }
         }

@@ -20,6 +20,7 @@ type SubscriptionRepository interface {
 	Create(ctx context.Context, s *models.Subscription) error
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Subscription, error)
 	List(ctx context.Context, f models.ListFilters) ([]models.Subscription, error)
+	Delete(ctx context.Context, id uuid.UUID) error
 }
 
 type SubscriptionService struct {
@@ -132,4 +133,18 @@ func (s *SubscriptionService) List(ctx context.Context, userIDStr, serviceName s
 		Offset: offset,
 	}
 	return s.repo.List(ctx, f)
+}
+
+func (s *SubscriptionService) Delete(ctx context.Context, idStr string) error {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return fmt.Errorf("%w: id must be UUID", errValid)
+	}
+	if err := s.repo.Delete(ctx, id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return gorm.ErrRecordNotFound
+		}
+		return fmt.Errorf("db error: %w", err)
+	}
+	return nil
 }

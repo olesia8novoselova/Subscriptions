@@ -62,7 +62,7 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 // @Description  Возвращает запись по её ID
 // @Tags subscriptions
 // @Produce json
-// @Param id path string true "Subscription ID (UUID)"
+// @Param id path string true "Subscription ID (UUID)" example("b548150d-6198-4cc1-a186-8c4a1e0ccdcf")
 // @Success 200 {object} models.SubscriptionResponse
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -101,10 +101,10 @@ func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Req
 // @Description Список подписок с фильтрами и пагинацией
 // @Tags subscriptions
 // @Produce json
-// @Param user_id query string false "Filter by user UUID"
-// @Param service_name query string false "Filter by service name (substring)"
-// @Param limit query int false "Page size (default 20, max 100)"
-// @Param offset query int false "Offset (default 0)"
+// @Param user_id query string false "Filter by user UUID" example("b548150d-6198-4cc1-a186-8c4a1e0ccdcf")
+// @Param service_name query string false "Filter by service name" example("Test Service") default("Test Service")
+// @Param limit query int false "Page size (default 20, max 100)" example(20) default(20)
+// @Param offset query int false "Offset (default 0)" example(0) default(0)
 // @Success 200 {array} models.SubscriptionResponse
 // @Failure 400 {object} map[string]string
 // @Router /api/subscriptions [get]
@@ -149,6 +149,40 @@ func (h *SubscriptionHandler) ListSubscriptions(w http.ResponseWriter, r *http.R
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
+}
+
+
+// DeleteSubscription
+// @Summary Delete subscription by id
+// @Description Удаляет подписку по её ID
+// @Tags subscriptions
+// @Param id path string true "Subscription ID (UUID)" example("b548150d-6198-4cc1-a186-8c4a1e0ccdcf")
+// @Success 204 "No Content"
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/subscriptions/{id} [delete]
+func (h *SubscriptionHandler) DeleteSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	id := strings.TrimPrefix(r.URL.Path, "/api/subscriptions/")
+	if id == "" || strings.Contains(id, "/") {
+		h.writeError(w, http.StatusBadRequest, "invalid id path")
+		return
+	}
+
+	if err := h.svc.Delete(r.Context(), id); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			h.writeError(w, http.StatusNotFound, "subscription not found")
+			return
+		}
+		h.log.Error("delete subscription failed", "error", err)
+		h.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 
