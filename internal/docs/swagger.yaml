@@ -39,6 +39,22 @@ definitions:
         example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
         type: string
     type: object
+  models.UpdateSubscriptionRequest:
+    properties:
+      end_date:
+        description: '"" — очистить конец'
+        example: ""
+        type: string
+      price:
+        example: 450
+        type: integer
+      service_name:
+        example: Yandex Plus
+        type: string
+      start_date:
+        example: 08-2025
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -176,6 +192,47 @@ paths:
               type: string
             type: object
       summary: Get subscription by id
+      tags:
+      - subscriptions
+    patch:
+      consumes:
+      - application/json
+      description: Частичное обновление полей подписки. Чтобы очистить end_date, передайте
+        "".
+      parameters:
+      - description: Subscription ID
+        example: '"b548150d-6198-4cc1-a186-8c4a1e0ccdcf"'
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Fields to update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateSubscriptionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.SubscriptionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Patch subscription
       tags:
       - subscriptions
 schemes:

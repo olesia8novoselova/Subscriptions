@@ -59,3 +59,19 @@ func (r *SubscriptionRepo) Delete(ctx context.Context, id uuid.UUID) error {
 	}
 	return nil
 }
+
+
+func (r *SubscriptionRepo) Update(ctx context.Context, id uuid.UUID, fields map[string]any) (*models.Subscription, error) {
+	tx := r.db.WithContext(ctx).Model(&models.Subscription{}).Where("id = ?", id).Updates(fields)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	if tx.RowsAffected == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	var sub models.Subscription
+	if err := r.db.WithContext(ctx).First(&sub, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &sub, nil
+}

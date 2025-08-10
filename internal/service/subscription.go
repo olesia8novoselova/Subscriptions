@@ -21,6 +21,7 @@ type SubscriptionRepository interface {
 	FindByID(ctx context.Context, id uuid.UUID) (*models.Subscription, error)
 	List(ctx context.Context, f models.ListFilters) ([]models.Subscription, error)
 	Delete(ctx context.Context, id uuid.UUID) error
+	Update(ctx context.Context, id uuid.UUID, fields map[string]any) (*models.Subscription, error)
 }
 
 type SubscriptionService struct {
@@ -147,4 +148,73 @@ func (s *SubscriptionService) Delete(ctx context.Context, idStr string) error {
 		return fmt.Errorf("db error: %w", err)
 	}
 	return nil
+}
+
+func (s *SubscriptionService) Patch(ctx context.Context, idStr string, req models.UpdateSubscriptionRequest) (*models.Subscription, error) {
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: id must be UUID", errValid)
+	}
+
+	fields := make(map[string]any)
+
+	if req.ServiceName != nil {
+		if *req.ServiceName == "" {
+			return nil, fmt.Errorf("%w: service_name cannot be empty", errValid)
+		}
+		fields["service_name"] = *req.ServiceName
+	}
+
+	if req.Price != nil {
+		if *req.Price <= 0 {
+			return nil, fmt.Errorf("%w: price must be positive integer", errValid)
+		}
+		fields["price"] = *req.Price
+	}
+
+	if req.StartDate != nil {
+		start, err := parseMonthYear(*req.StartDate)
+		if err != nil {
+			return nil, fmt.Errorf("%w: start_date must be MM-YYYY", errValid)
+		}
+		fields["start_date"] = start
+	}
+
+	if req.EndDate != nil {
+		if *req.EndDate == "" {
+			// очистить end_date
+			fields["end_date"] = nil
+		} else {
+			end, err := parseMonthYear(*req.EndDate)
+			if err != nil {
+				return nil, fmt.Errorf("%w: end_date must be MM-YYYY or empty to clear", errValid)
+			}
+			// если обновляем обе даты — проверим порядок; если только end, проверим через БД
+			if sd, ok := fields["start_date"].(time.Time); ok && end.Before(sd) {
+				return nil, fmt.Errorf("%w: end_date must not be before start_date", errValid)
+			}
+			fields["end_date"] = end
+		}
+	}
+
+	if len(fields) == 0 {
+		return nil, fmt.Errorf("%w: no fields to update", errValid)
+	}
+
+	// если задают только end_date — убедимся, что он не раньше текущего start_date
+	if req.EndDate != nil && *req.EndDate != "" && fields["start_date"] == nil {
+		existing, err := s.repo.FindByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, gorm.ErrRecordNotFound
+			}
+			return nil, err
+		}
+		newEnd := fields["end_date"].(time.Time)
+		if newEnd.Before(existing.StartDate) {
+			return nil, fmt.Errorf("%w: end_date must not be before start_date", errValid)
+		}
+	}
+
+	return s.repo.Update(ctx, id, fields)
 }

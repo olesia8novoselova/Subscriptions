@@ -46,3 +46,10 @@ type ListFilters struct {
 	Limit int
 	Offset int
 }
+
+type UpdateSubscriptionRequest struct {
+	ServiceName *string `json:"service_name,omitempty" example:"Yandex Plus"`
+	Price *int `json:"price,omitempty" example:"450"`
+	StartDate *string `json:"start_date,omitempty" example:"08-2025"`
+	EndDate *string `json:"end_date,omitempty" example:""` // "" — очистить конец
+}
