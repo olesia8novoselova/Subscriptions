@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	errValid = errors.New("validation error")
+	errValid   = errors.New("validation error")
 	ErrOverlap = errors.New("overlapping subscription")
 )
 
@@ -36,6 +36,8 @@ func NewSubscriptionService(repo SubscriptionRepository, log *slog.Logger) *Subs
 	return &SubscriptionService{repo: repo, log: log}
 }
 
+// Create — создает новую подписку
+// Проверяет пересечения с существующими подписками пользователя
 func (s *SubscriptionService) Create(ctx context.Context, req models.CreateSubscriptionRequest) (*models.Subscription, error) {
 	// Валидация
 	if req.ServiceName == "" {
@@ -67,12 +69,12 @@ func (s *SubscriptionService) Create(ctx context.Context, req models.CreateSubsc
 	}
 
 	sub := &models.Subscription{
-		ID: uuid.New(),
+		ID:          uuid.New(),
 		ServiceName: req.ServiceName,
-		Price: req.Price,
-		UserID: userID,
-		StartDate: start,
-		EndDate: endPtr,
+		Price:       req.Price,
+		UserID:      userID,
+		StartDate:   start,
+		EndDate:     endPtr,
 	}
 
 	overlap, err := s.repo.ExistsOverlap(ctx, sub.UserID, sub.ServiceName, sub.StartDate, sub.EndDate, nil)
@@ -103,6 +105,7 @@ func parseMonthYear(s string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("invalid format")
 }
 
+// GetByID — получает подписку по ID
 func (s *SubscriptionService) GetByID(ctx context.Context, idStr string) (*models.Subscription, error) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -118,6 +121,7 @@ func (s *SubscriptionService) GetByID(ctx context.Context, idStr string) (*model
 	return sub, nil
 }
 
+// List — получает список подписок с фильтрами и пагинацией
 func (s *SubscriptionService) List(ctx context.Context, userIDStr, serviceName string, limit, offset int) ([]models.Subscription, error) {
 	if limit <= 0 {
 		limit = 20
@@ -139,14 +143,15 @@ func (s *SubscriptionService) List(ctx context.Context, userIDStr, serviceName s
 	}
 
 	f := models.ListFilters{
-		UserID: userIDPtr,
+		UserID:      userIDPtr,
 		ServiceName: serviceName,
-		Limit: limit,
-		Offset: offset,
+		Limit:       limit,
+		Offset:      offset,
 	}
 	return s.repo.List(ctx, f)
 }
 
+// Delete — удаляет подписку по ID
 func (s *SubscriptionService) Delete(ctx context.Context, idStr string) error {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -161,6 +166,9 @@ func (s *SubscriptionService) Delete(ctx context.Context, idStr string) error {
 	return nil
 }
 
+// Patch — обновляет подписку по ID
+// Проверяет пересечения с существующими подписками пользователя
+// Если поле пустое — не обновляет его
 func (s *SubscriptionService) Patch(ctx context.Context, idStr string, req models.UpdateSubscriptionRequest) (*models.Subscription, error) {
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -261,7 +269,7 @@ func (s *SubscriptionService) Patch(ctx context.Context, idStr string, req model
 	return s.repo.Update(ctx, id, fields)
 }
 
-// TotalCost — суммарная стоимость за период [fromStr; toStr] c фильтрами.
+// TotalCost — суммарная стоимость за период [fromStr; toStr] c фильтрами
 func (s *SubscriptionService) TotalCost(ctx context.Context, fromStr, toStr, userIDStr, serviceName string) (int, error) {
 	from, err := parseMonthYear(fromStr) // "01-2006"
 	if err != nil {
@@ -285,10 +293,10 @@ func (s *SubscriptionService) TotalCost(ctx context.Context, fromStr, toStr, use
 	}
 
 	f := models.ListFilters{
-		UserID: userIDPtr,
+		UserID:      userIDPtr,
 		ServiceName: serviceName,
-		Limit: 0,
-		Offset: 0,
+		Limit:       0,
+		Offset:      0,
 	}
 
 	subs, err := s.repo.FindActiveInPeriod(ctx, from, to, f)

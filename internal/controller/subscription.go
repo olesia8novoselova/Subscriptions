@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log/slog"
@@ -13,12 +14,21 @@ import (
 	"gorm.io/gorm"
 )
 
+type SubscriptionService interface {
+	Create(ctx context.Context, req models.CreateSubscriptionRequest) (*models.Subscription, error)
+	GetByID(ctx context.Context, id string) (*models.Subscription, error)
+	List(ctx context.Context, userID, serviceName string, limit, offset int) ([]models.Subscription, error)
+	Delete(ctx context.Context, id string) error
+	Patch(ctx context.Context, id string, req models.UpdateSubscriptionRequest) (*models.Subscription, error)
+	TotalCost(ctx context.Context, from, to, userID, serviceName string) (int, error)
+}
+
 type SubscriptionHandler struct {
-	svc *service.SubscriptionService
+	svc SubscriptionService
 	log *slog.Logger
 }
 
-func NewSubscriptionHandler(svc *service.SubscriptionService, log *slog.Logger) *SubscriptionHandler {
+func NewSubscriptionHandler(svc SubscriptionService, log *slog.Logger) *SubscriptionHandler {
 	return &SubscriptionHandler{svc: svc, log: log}
 }
 
@@ -61,7 +71,6 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-
 // GetSubscription
 // @Summary Get subscription by id
 // @Description  Возвращает запись по её ID
@@ -100,7 +109,6 @@ func (h *SubscriptionHandler) GetSubscription(w http.ResponseWriter, r *http.Req
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-
 // ListSubscriptions
 // @Summary List subscriptions
 // @Description Список подписок с фильтрами и пагинацией
@@ -125,20 +133,20 @@ func (h *SubscriptionHandler) ListSubscriptions(w http.ResponseWriter, r *http.R
 	limit := 0
 	offset := 0
 	if v := q.Get("limit"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			limit = n
-		} else {
+		n, err := strconv.Atoi(v)
+		if err != nil {
 			h.writeError(w, http.StatusBadRequest, "limit must be integer")
 			return
 		}
+		limit = n
 	}
 	if v := q.Get("offset"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil {
-			offset = n
-		} else {
+		n, err := strconv.Atoi(v)
+		if err != nil {
 			h.writeError(w, http.StatusBadRequest, "offset must be integer")
 			return
 		}
+		offset = n
 	}
 
 	list, err := h.svc.List(r.Context(), userID, serviceName, limit, offset)
@@ -155,7 +163,6 @@ func (h *SubscriptionHandler) ListSubscriptions(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(resp)
 }
-
 
 // DeleteSubscription
 // @Summary Delete subscription by id
@@ -239,7 +246,6 @@ func (h *SubscriptionHandler) PatchSubscription(w http.ResponseWriter, r *http.R
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-
 // GetTotalCost
 // @Summary Total cost for a period
 // @Description Суммарная стоимость подписок за период [from; to] в месяцах. Формат дат: MM-YYYY.
@@ -279,7 +285,6 @@ func (h *SubscriptionHandler) GetTotalCost(w http.ResponseWriter, r *http.Reques
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-
 func (h *SubscriptionHandler) writeError(w http.ResponseWriter, code int, msg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
@@ -294,11 +299,11 @@ func toResponse(s *models.Subscription) models.SubscriptionResponse {
 		endStr = &es
 	}
 	return models.SubscriptionResponse{
-		ID: s.ID,
+		ID:          s.ID,
 		ServiceName: s.ServiceName,
-		Price: s.Price,
-		UserID:  s.UserID,
-		StartDate: start,
-		EndDate: endStr,
+		Price:       s.Price,
+		UserID:      s.UserID,
+		StartDate:   start,
+		EndDate:     endStr,
 	}
 }

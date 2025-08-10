@@ -1,0 +1,35 @@
+run:
+  timeout: 3m
+  tests: true
+
+output:
+  sort-results: true
+  print-issued-lines: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gofmt
+    - goimports
+    - gosimple
+    - ineffassign
+    - errcheck
+    - gocritic
+    - revive
+
+linters-settings:
+  revive:
+    severity: warning
+    rules:
+      - name: indent-error-flow
+      - name: if-return
+      - name: early-return
+      - name: empty-lines
+  gofmt:
+    simplify: true
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0

@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -40,14 +39,14 @@ func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		logger.Error("failed to load config", "error", err)
-		os.Exit(1)
+		return
 	}
 
 	// БД (GORM)
 	db, err := initDB(cfg)
 	if err != nil {
 		logger.Error("database initialization failed", "error", err)
-		os.Exit(1)
+		return
 	}
 	sqlDB, _ := db.DB()
 	defer func() {
@@ -79,12 +78,12 @@ func main() {
 
 	// HTTP Server с таймаутами
 	srv := &http.Server{
-		Addr: ":" + cfg.ServerPort,
-		Handler: handler,
+		Addr:              ":" + cfg.ServerPort,
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
-		ReadTimeout: 10 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout: 60 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 		BaseContext: func(_ net.Listener) context.Context {
 			return context.Background()
 		},
@@ -93,7 +92,7 @@ func main() {
 	logger.Info("starting server", "port", cfg.ServerPort)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		logger.Error("server failed", "error", err)
-		os.Exit(1)
+		return
 	}
 }
 
