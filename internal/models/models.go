@@ -53,3 +53,8 @@ type UpdateSubscriptionRequest struct {
 	StartDate *string `json:"start_date,omitempty" example:"08-2025"`
 	EndDate *string `json:"end_date,omitempty" example:""` // "" — очистить конец
 }
+
+// TotalCostResponse — суммарная стоимость подписок
+type TotalCostResponse struct {
+	Total int `json:"total"`
+}

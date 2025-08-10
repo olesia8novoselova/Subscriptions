@@ -39,6 +39,11 @@ definitions:
         example: 60601fee-2bf1-4721-ae6f-7636e79a0cba
         type: string
     type: object
+  models.TotalCostResponse:
+    properties:
+      total:
+        type: integer
+    type: object
   models.UpdateSubscriptionRequest:
     properties:
       end_date:
@@ -233,6 +238,50 @@ paths:
               type: string
             type: object
       summary: Patch subscription
+      tags:
+      - subscriptions
+  /api/subscriptions/total:
+    get:
+      description: 'Суммарная стоимость подписок за период [from; to] в месяцах. Формат
+        дат: MM-YYYY.'
+      parameters:
+      - description: From month (MM-YYYY)
+        example: '"07-2025"'
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: To month (MM-YYYY)
+        example: '"09-2025"'
+        in: query
+        name: to
+        required: true
+        type: string
+      - description: Filter by user UUID
+        example: '"60601fee-2bf1-4721-ae6f-7636e79a0cba"'
+        format: uuid
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by service name
+        example: '"Yandex Plus"'
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.TotalCostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Total cost for a period
       tags:
       - subscriptions
 schemes:

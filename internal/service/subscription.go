@@ -14,6 +14,7 @@ import (
 
 var (
 	errValid = errors.New("validation error")
+	ErrOverlap = errors.New("overlapping subscription")
 )
 
 type SubscriptionRepository interface {
@@ -22,6 +23,8 @@ type SubscriptionRepository interface {
 	List(ctx context.Context, f models.ListFilters) ([]models.Subscription, error)
 	Delete(ctx context.Context, id uuid.UUID) error
 	Update(ctx context.Context, id uuid.UUID, fields map[string]any) (*models.Subscription, error)
+	FindActiveInPeriod(ctx context.Context, from, to time.Time, f models.ListFilters) ([]models.Subscription, error)
+	ExistsOverlap(ctx context.Context, userID uuid.UUID, serviceName string, start time.Time, end *time.Time, excludeID *uuid.UUID) (bool, error)
 }
 
 type SubscriptionService struct {
@@ -70,6 +73,14 @@ func (s *SubscriptionService) Create(ctx context.Context, req models.CreateSubsc
 		UserID: userID,
 		StartDate: start,
 		EndDate: endPtr,
+	}
+
+	overlap, err := s.repo.ExistsOverlap(ctx, sub.UserID, sub.ServiceName, sub.StartDate, sub.EndDate, nil)
+	if err != nil {
+		return nil, err
+	}
+	if overlap {
+		return nil, ErrOverlap
 	}
 
 	if err := s.repo.Create(ctx, sub); err != nil {
@@ -216,5 +227,103 @@ func (s *SubscriptionService) Patch(ctx context.Context, idStr string, req model
 		}
 	}
 
+	existing, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	newStart := existing.StartDate
+	if v, ok := fields["start_date"].(time.Time); ok {
+		newStart = v
+	}
+	var newEnd *time.Time
+	if _, ok := fields["end_date"]; ok {
+		if fields["end_date"] == nil {
+			newEnd = nil
+		} else {
+			v := fields["end_date"].(time.Time)
+			newEnd = &v
+		}
+	} else {
+		newEnd = existing.EndDate
+	}
+
+	overlap, err := s.repo.ExistsOverlap(ctx, existing.UserID, existing.ServiceName, newStart, newEnd, &id)
+	if err != nil {
+		return nil, err
+	}
+	if overlap {
+		return nil, ErrOverlap
+	}
+
 	return s.repo.Update(ctx, id, fields)
+}
+
+// TotalCost — суммарная стоимость за период [fromStr; toStr] c фильтрами.
+func (s *SubscriptionService) TotalCost(ctx context.Context, fromStr, toStr, userIDStr, serviceName string) (int, error) {
+	from, err := parseMonthYear(fromStr) // "01-2006"
+	if err != nil {
+		return 0, fmt.Errorf("%w: from must be MM-YYYY", errValid)
+	}
+	to, err := parseMonthYear(toStr)
+	if err != nil {
+		return 0, fmt.Errorf("%w: to must be MM-YYYY", errValid)
+	}
+	if to.Before(from) {
+		return 0, fmt.Errorf("%w: to must be >= from", errValid)
+	}
+
+	var userIDPtr *uuid.UUID
+	if userIDStr != "" {
+		uid, err := uuid.Parse(userIDStr)
+		if err != nil {
+			return 0, fmt.Errorf("%w: user_id must be UUID", errValid)
+		}
+		userIDPtr = &uid
+	}
+
+	f := models.ListFilters{
+		UserID: userIDPtr,
+		ServiceName: serviceName,
+		Limit: 0,
+		Offset: 0,
+	}
+
+	subs, err := s.repo.FindActiveInPeriod(ctx, from, to, f)
+	if err != nil {
+		return 0, fmt.Errorf("db error: %w", err)
+	}
+
+	total := 0
+	for _, sub := range subs {
+		// нормализуем границы пересечения
+		overlapStart := maxDate(sub.StartDate, from)
+		overlapEnd := to
+		if sub.EndDate != nil && sub.EndDate.Before(overlapEnd) {
+			overlapEnd = *sub.EndDate
+		}
+		if overlapEnd.Before(overlapStart) {
+			continue
+		}
+		months := monthsInclusive(overlapStart, overlapEnd)
+		total += months * sub.Price
+	}
+
+	return total, nil
+}
+
+// monthsInclusive — количество месяцев между датами
+func monthsInclusive(a, b time.Time) int {
+	ay, am, _ := a.Date()
+	by, bm, _ := b.Date()
+	return (by-int(ay))*12 + int(bm-am) + 1
+}
+
+func maxDate(a, b time.Time) time.Time {
+	if a.After(b) {
+		return a
+	}
+	return b
 }

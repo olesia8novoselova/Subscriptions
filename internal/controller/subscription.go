@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -45,6 +46,10 @@ func (h *SubscriptionHandler) CreateSubscription(w http.ResponseWriter, r *http.
 
 	sub, err := h.svc.Create(r.Context(), req)
 	if err != nil {
+		if errors.Is(err, service.ErrOverlap) {
+			h.writeError(w, http.StatusConflict, "subscription overlaps with existing one for this user and service")
+			return
+		}
 		h.log.Error("create subscription failed", "error", err)
 		h.writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -220,6 +225,10 @@ func (h *SubscriptionHandler) PatchSubscription(w http.ResponseWriter, r *http.R
 			h.writeError(w, http.StatusNotFound, "subscription not found")
 			return
 		}
+		if errors.Is(err, service.ErrOverlap) {
+			h.writeError(w, http.StatusConflict, "subscription overlaps with existing one for this user and service")
+			return
+		}
 		h.log.Error("patch subscription failed", "error", err)
 		h.writeError(w, http.StatusBadRequest, err.Error())
 		return
@@ -230,6 +239,45 @@ func (h *SubscriptionHandler) PatchSubscription(w http.ResponseWriter, r *http.R
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
+
+// GetTotalCost
+// @Summary Total cost for a period
+// @Description Суммарная стоимость подписок за период [from; to] в месяцах. Формат дат: MM-YYYY.
+// @Tags subscriptions
+// @Produce json
+// @Param  from  query  string  true  "From month (MM-YYYY)"  example("07-2025")
+// @Param  to  query  string  true  "To month (MM-YYYY)"  example("09-2025")
+// @Param  user_id  query  string  false  "Filter by user UUID"  format(uuid)  example("60601fee-2bf1-4721-ae6f-7636e79a0cba")
+// @Param  service_name  query  string  false  "Filter by service name"  example("Yandex Plus")
+// @Success  200  {object}  models.TotalCostResponse
+// @Failure  400  {object}  map[string]string
+// @Router /api/subscriptions/total  [get]
+func (h *SubscriptionHandler) GetTotalCost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	q := r.URL.Query()
+	from := q.Get("from")
+	to := q.Get("to")
+	if from == "" || to == "" {
+		h.writeError(w, http.StatusBadRequest, "from and to are required (MM-YYYY)")
+		return
+	}
+	userID := q.Get("user_id")
+	serviceName := q.Get("service_name")
+
+	total, err := h.svc.TotalCost(r.Context(), from, to, userID, serviceName)
+	if err != nil {
+		h.log.Error("total cost failed", "error", err)
+		h.writeError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp := models.TotalCostResponse{Total: total}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(resp)
+}
 
 
 func (h *SubscriptionHandler) writeError(w http.ResponseWriter, code int, msg string) {

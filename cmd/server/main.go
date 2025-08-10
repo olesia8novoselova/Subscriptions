@@ -70,6 +70,7 @@ func main() {
 	mux.HandleFunc("GET /api/subscriptions", h.ListSubscriptions)
 	mux.HandleFunc("DELETE /api/subscriptions/", h.DeleteSubscription)
 	mux.HandleFunc("PATCH /api/subscriptions/", h.PatchSubscription)
+	mux.HandleFunc("GET /api/subscriptions/total", h.GetTotalCost)
 
 	mux.Handle("GET /swagger/", httpSwagger.WrapHandler)
 

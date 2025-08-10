@@ -123,6 +123,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/subscriptions/total": {
+            "get": {
+                "description": "Суммарная стоимость подписок за период [from; to] в месяцах. Формат дат: MM-YYYY.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subscriptions"
+                ],
+                "summary": "Total cost for a period",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"07-2025\"",
+                        "description": "From month (MM-YYYY)",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"09-2025\"",
+                        "description": "To month (MM-YYYY)",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "\"60601fee-2bf1-4721-ae6f-7636e79a0cba\"",
+                        "description": "Filter by user UUID",
+                        "name": "user_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"Yandex Plus\"",
+                        "description": "Filter by service name",
+                        "name": "service_name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.TotalCostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/subscriptions/{id}": {
             "get": {
                 "description": "Возвращает запись по её ID",
@@ -323,6 +385,14 @@ const docTemplate = `{
                 "user_id": {
                     "type": "string",
                     "example": "60601fee-2bf1-4721-ae6f-7636e79a0cba"
+                }
+            }
+        },
+        "models.TotalCostResponse": {
+            "type": "object",
+            "properties": {
+                "total": {
+                    "type": "integer"
                 }
             }
         },
